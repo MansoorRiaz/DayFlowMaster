@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Send, X, MessageCircle } from 'lucide-react';
+import { Bot, Send, X, MessageCircle, Minimize2 } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -15,8 +14,18 @@ interface Message {
   timestamp: Date;
 }
 
+interface Position {
+  x: number;
+  y: number;
+}
+
 export function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [position, setPosition] = useState<Position>({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
+  const chatBoxRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -27,6 +36,51 @@ export function AIAssistant() {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Handle dragging
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      setIsDragging(true);
+      const rect = chatBoxRef.current?.getBoundingClientRect();
+      if (rect) {
+        setDragOffset({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging && chatBoxRef.current) {
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      
+      // Keep within viewport bounds
+      const maxX = window.innerWidth - 320; // chat box width
+      const maxY = window.innerHeight - 400; // chat box height
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -103,85 +157,133 @@ export function AIAssistant() {
     }
   };
 
+  const handleFloatingButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsOpen(true);
+    setIsMinimized(false);
+    // Position the chat box near where the button was clicked
+    setPosition({
+      x: Math.min(e.clientX - 160, window.innerWidth - 320),
+      y: Math.min(e.clientY - 200, window.innerHeight - 400),
+    });
+  };
+
   return (
     <>
       {/* Floating AI Button */}
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={handleFloatingButtonClick}
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-50"
         aria-label="Open AI Assistant"
       >
         <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
 
-      {/* AI Chat Dialog */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="w-[95vw] max-w-[500px] h-[80vh] sm:h-[600px] flex flex-col mx-2">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <Bot className="h-5 w-5 text-blue-600" />
-              AI Assistant
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex-1 flex flex-col">
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4 border rounded-lg mb-4">
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        message.isUser
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-gray-100 text-gray-900 p-3 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        <span className="text-sm">AI is thinking...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-
-            {/* Input */}
-            <div className="flex gap-2">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything..."
-                className="flex-1 text-sm sm:text-base"
-                disabled={isLoading}
-              />
+      {/* Small Chat Box */}
+      {isOpen && (
+        <div
+          ref={chatBoxRef}
+          className="fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-200"
+          style={{
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            width: '320px',
+            height: isMinimized ? '50px' : '400px',
+            cursor: isDragging ? 'grabbing' : 'default',
+          }}
+        >
+          {/* Header - Draggable */}
+          <div
+            className="flex items-center justify-between p-3 bg-blue-600 text-white rounded-t-lg cursor-grab active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
+          >
+            <div className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              <span className="text-sm font-medium">AI Assistant</span>
+            </div>
+            <div className="flex items-center gap-1">
               <Button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isLoading}
-                size="icon"
-                className="h-10 w-10 sm:h-10 sm:w-10"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="h-6 w-6 p-0 text-white hover:bg-blue-700"
               >
-                <Send className="h-4 w-4" />
+                <Minimize2 className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(false)}
+                className="h-6 w-6 p-0 text-white hover:bg-blue-700"
+              >
+                <X className="h-3 w-3" />
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Chat Content */}
+          {!isMinimized && (
+            <div className="flex flex-col h-full">
+              {/* Messages */}
+              <ScrollArea className="flex-1 p-3">
+                <div className="space-y-2">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] p-2 rounded-lg text-xs ${
+                          message.isUser
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {message.timestamp.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 text-gray-900 p-2 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                          <span className="text-xs">AI is thinking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Input */}
+              <div className="p-3 border-t border-gray-200">
+                <div className="flex gap-2">
+                  <Input
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask me anything..."
+                    className="flex-1 text-xs h-8"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || isLoading}
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Send className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 } 
