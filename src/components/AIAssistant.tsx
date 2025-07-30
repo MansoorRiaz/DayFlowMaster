@@ -58,7 +58,7 @@ export function AIAssistant() {
       
       // Keep within viewport bounds
       const maxX = window.innerWidth - 320; // chat box width
-      const maxY = window.innerHeight - 400; // chat box height
+      const maxY = window.innerHeight - 450; // chat box height
       
       setPosition({
         x: Math.max(0, Math.min(newX, maxX)),
@@ -164,7 +164,7 @@ export function AIAssistant() {
     // Position the chat box near where the button was clicked
     setPosition({
       x: Math.min(e.clientX - 160, window.innerWidth - 320),
-      y: Math.min(e.clientY - 200, window.innerHeight - 400),
+      y: Math.min(e.clientY - 225, window.innerHeight - 450),
     });
   };
 
@@ -188,7 +188,7 @@ export function AIAssistant() {
             left: `${position.x}px`,
             top: `${position.y}px`,
             width: '320px',
-            height: isMinimized ? '50px' : '400px',
+            height: isMinimized ? '50px' : '450px',
             cursor: isDragging ? 'grabbing' : 'default',
           }}
         >
@@ -225,7 +225,7 @@ export function AIAssistant() {
           {!isMinimized && (
             <div className="flex flex-col h-full">
               {/* Messages */}
-              <ScrollArea className="flex-1 p-3">
+              <ScrollArea className="flex-1 p-3 pb-0">
                 <div className="space-y-2">
                   {messages.map((message) => (
                     <div
@@ -259,8 +259,8 @@ export function AIAssistant() {
                 </div>
               </ScrollArea>
 
-              {/* Input */}
-              <div className="p-3 border-t border-gray-200">
+              {/* Input - Fixed at bottom */}
+              <div className="p-3 border-t border-gray-200 bg-white">
                 <div className="flex gap-2">
                   <Input
                     value={inputValue}
