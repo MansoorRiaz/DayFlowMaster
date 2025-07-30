@@ -38,7 +38,6 @@ export default function Home() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
-  const [weather, setWeather] = useState<{ temp: number; icon: string; description: string; city: string } | null>(null);
   const [notificationPermission, setNotificationPermission] = useState('default');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -56,121 +55,6 @@ export default function Home() {
       </svg>
     `;
     return `data:image/svg+xml;base64,${btoa(svgIcon)}`;
-  };
-
-  // Fetch weather data
-  const fetchWeather = async (lat: number, lon: number) => {
-    try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=65f6be9b0085eb92f3913dab4c2b68de&units=metric`
-      );
-      const data = await response.json();
-      
-      // Map weather conditions to icons
-      const getWeatherIcon = (condition: string) => {
-        const weatherIcons: { [key: string]: string } = {
-          '01d': '☀️', // clear sky
-          '01n': '🌙', // clear sky night
-          '02d': '⛅', // few clouds
-          '02n': '☁️', // few clouds night
-          '03d': '☁️', // scattered clouds
-          '03n': '☁️', // scattered clouds
-          '04d': '☁️', // broken clouds
-          '04n': '☁️', // broken clouds
-          '09d': '🌧️', // shower rain
-          '09n': '🌧️', // shower rain
-          '10d': '🌦️', // rain
-          '10n': '🌧️', // rain night
-          '11d': '⛈️', // thunderstorm
-          '11n': '⛈️', // thunderstorm
-          '13d': '❄️', // snow
-          '13n': '❄️', // snow
-          '50d': '🌫️', // mist
-          '50n': '🌫️', // mist
-        };
-        return weatherIcons[condition] || '🌤️';
-      };
-
-      // Type-safe weather data extraction
-      if (data && data.main && typeof data.main.temp === 'number' && 
-          data.weather && Array.isArray(data.weather) && data.weather.length > 0) {
-        setWeather({
-          temp: Math.round(data.main.temp),
-          icon: getWeatherIcon(data.weather[0].icon),
-          description: data.weather[0].description,
-          city: data.name || 'Unknown City'
-        });
-      } else {
-        throw new Error('Invalid weather data structure');
-      }
-    } catch (error) {
-      console.error('Error fetching weather:', error);
-      setWeather({
-        temp: 22,
-        icon: '🌤️',
-        description: 'Weather unavailable',
-        city: 'Weather Error'
-      });
-    }
-  };
-
-  // Retry location access
-  const retryLocationAccess = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchWeather(position.coords.latitude, position.coords.longitude);
-          toast({
-            title: "Location Access",
-            description: "Location access granted! Weather data updated.",
-            duration: 3000,
-          });
-        },
-        (error) => {
-          console.error('Error getting location on retry:', error);
-          
-          let errorMessage = 'Location access denied';
-          let cityName = 'Location Denied';
-          
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
-              cityName = 'Location Denied';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information unavailable.';
-              cityName = 'Location Unavailable';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out.';
-              cityName = 'Location Timeout';
-              break;
-            default:
-              errorMessage = 'Unable to get location.';
-              cityName = 'Location Error';
-              break;
-          }
-          
-          toast({
-            title: "Location Access",
-            description: errorMessage,
-            duration: 4000,
-          });
-          
-          setWeather({
-            temp: 22,
-            icon: '🌤️',
-            description: 'Location unavailable',
-            city: cityName
-          });
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000 // 5 minutes
-        }
-      );
-    }
   };
 
   const resetDailyItems = useCallback(() => {
@@ -297,75 +181,12 @@ export default function Home() {
     resetDailyItems();
     const timer = setInterval(resetDailyItems, 60 * 60 * 1000); // Check every hour
     
-    // Get user location and fetch weather
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchWeather(position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          
-          // Handle different types of geolocation errors
-          let errorMessage = 'Location access denied';
-          let cityName = 'Unknown City';
-          
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location permission denied. Weather data will be limited.';
-              cityName = 'Location Denied';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information unavailable.';
-              cityName = 'Location Unavailable';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out.';
-              cityName = 'Location Timeout';
-              break;
-            default:
-              errorMessage = 'Unable to get location.';
-              cityName = 'Location Error';
-              break;
-          }
-          
-          // Show user-friendly toast message
-          toast({
-            title: "Location Access",
-            description: errorMessage,
-            duration: 4000,
-          });
-          
-          // Set default weather if location access is denied
-          setWeather({
-            temp: 22,
-            icon: '🌤️',
-            description: 'Location unavailable',
-            city: cityName
-          });
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000 // 5 minutes
-        }
-      );
-    } else {
-      // Set default weather if geolocation is not supported
-      setWeather({
-        temp: 22,
-        icon: '🌤️',
-        description: 'Geolocation not supported',
-        city: 'Location Unsupported'
-      });
-    }
-    
     return () => {
       clearInterval(timer);
       clearInterval(timeInterval);
     };
 
-  }, [resetDailyItems, toast]);
+  }, [resetDailyItems]);
   
   useEffect(() => {
     if(notificationPermission === 'granted') {
@@ -709,57 +530,11 @@ export default function Home() {
 
   return (
           <>
-        {/* Mobile-optimized widgets - hidden on very small screens */}
-        <div className="hidden sm:block">
-          {/* Round digital clock in top-right corner of entire page */}
-          <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-200">
-              <div className="text-black text-xs sm:text-sm md:text-xl font-mono font-bold tracking-wider">
-                {currentTime}
-              </div>
-            </div>
-          </div>
-          
-          {/* Weather widget below the clock */}
-          <div className="fixed top-28 sm:top-44 md:top-80 right-2 sm:right-4 z-50">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
-              <div className="text-lg sm:text-xl md:text-3xl mb-1">
-                {weather?.icon || '🌤️'}
-              </div>
-              <div className="text-black text-xs sm:text-sm md:text-lg font-bold">
-                {weather?.temp || '22'}°C
-              </div>
-              <div className="text-black text-xs text-center px-1 sm:px-2 mt-1 hidden md:block">
-                {weather?.description || 'Partly cloudy'}
-              </div>
-              {/* Show retry button if location is denied */}
-              {weather?.city && weather.city.includes('Location') && (
-                <button
-                  onClick={retryLocationAccess}
-                  className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg transition-colors"
-                  title="Retry location access"
-                >
-                  🔄 Retry
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile compact widgets for very small screens */}
-        <div className="sm:hidden fixed top-2 right-2 z-50">
-          <div className="flex flex-col gap-1">
-            {/* Compact clock */}
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-gray-200">
-              <div className="text-black text-xs font-mono font-bold">
-                {currentTime}
-              </div>
-            </div>
-            {/* Compact weather */}
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-gray-200">
-              <div className="text-sm">
-                {weather?.icon || '🌤️'}
-              </div>
+        {/* Round digital clock in top-right corner of entire page */}
+        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-200">
+            <div className="text-black text-xs sm:text-sm md:text-xl font-mono font-bold tracking-wider">
+              {currentTime}
             </div>
           </div>
         </div>
