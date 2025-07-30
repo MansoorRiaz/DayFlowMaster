@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🌊 DayFlow - Smart Task Management & Habit Tracking
 
 A modern, AI-powered productivity app built with Next.js, React, and TypeScript. DayFlow helps you organize your day, track habits, and boost productivity with intelligent features and real-time data.
@@ -198,3 +199,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Built with ❤️ by SoftwareHub**
 
 _Transform your productivity with DayFlow - the smart way to manage your day!_
+=======
+# DayFlowMaster
+DayFlow
+>>>>>>> d2aa31bb058a750aa1670c04bd4d4dd5765b4767
