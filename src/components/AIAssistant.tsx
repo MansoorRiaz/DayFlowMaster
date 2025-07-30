@@ -22,7 +22,7 @@ interface Position {
 export function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [position, setPosition] = useState<Position>({ x: 20, y: 20 });
+  const [position, setPosition] = useState<Position>({ x: 20, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const chatBoxRef = useRef<HTMLDivElement>(null);
@@ -59,10 +59,11 @@ export function AIAssistant() {
       // Keep within viewport bounds
       const maxX = window.innerWidth - 320; // chat box width
       const maxY = window.innerHeight - 450; // chat box height
+      const minY = 50; // minimum Y position to ensure input is visible
       
       setPosition({
         x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY)),
+        y: Math.max(minY, Math.min(newY, maxY)),
       });
     }
   };
@@ -161,10 +162,11 @@ export function AIAssistant() {
     e.preventDefault();
     setIsOpen(true);
     setIsMinimized(false);
-    // Position the chat box near where the button was clicked
+    // Position the chat box higher on screen to ensure input is visible
+    const minY = 50; // minimum Y position
     setPosition({
       x: Math.min(e.clientX - 160, window.innerWidth - 320),
-      y: Math.min(e.clientY - 225, window.innerHeight - 450),
+      y: Math.max(minY, Math.min(e.clientY - 350, window.innerHeight - 450)),
     });
   };
 
