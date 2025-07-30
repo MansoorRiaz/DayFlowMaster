@@ -615,44 +615,66 @@ export default function Home() {
 
   return (
           <>
-        {/* Round digital clock in top-right corner of entire page */}
-        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
-          <div className="relative w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-200">
-            <div className="text-black text-sm sm:text-xl font-mono font-bold tracking-wider">
-              {currentTime}
+        {/* Mobile-optimized widgets - hidden on very small screens */}
+        <div className="hidden sm:block">
+          {/* Round digital clock in top-right corner of entire page */}
+          <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-200">
+              <div className="text-black text-xs sm:text-sm md:text-xl font-mono font-bold tracking-wider">
+                {currentTime}
+              </div>
+            </div>
+          </div>
+          
+          {/* Weather widget below the clock */}
+          <div className="fixed top-20 sm:top-28 md:top-44 right-2 sm:right-4 z-50">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
+              <div className="text-lg sm:text-xl md:text-3xl mb-1">
+                {weather?.icon || '🌤️'}
+              </div>
+              <div className="text-black text-xs sm:text-sm md:text-lg font-bold">
+                {weather?.temp || '22'}°C
+              </div>
+              <div className="text-black text-xs text-center px-1 sm:px-2 mt-1 hidden md:block">
+                {weather?.description || 'Partly cloudy'}
+              </div>
+            </div>
+          </div>
+          
+          {/* City widget below the weather widget */}
+          <div className="fixed top-38 sm:top-52 md:top-80 right-2 sm:right-4 z-50">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
+              <div className="text-sm sm:text-lg md:text-2xl mb-2">
+                🏙️
+              </div>
+              <div className="text-black text-xs sm:text-sm font-bold text-center px-1 sm:px-2 leading-tight">
+                {weather?.city || 'Unknown City'}
+              </div>
             </div>
           </div>
         </div>
-        
-        {/* Weather widget below the clock */}
-        <div className="fixed top-28 sm:top-44 right-2 sm:right-4 z-50">
-          <div className="relative w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
-            <div className="text-xl sm:text-3xl mb-1">
-              {weather?.icon || '🌤️'}
+
+        {/* Mobile compact widgets for very small screens */}
+        <div className="sm:hidden fixed top-2 right-2 z-50">
+          <div className="flex flex-col gap-1">
+            {/* Compact clock */}
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-gray-200">
+              <div className="text-black text-xs font-mono font-bold">
+                {currentTime}
+              </div>
             </div>
-            <div className="text-black text-sm sm:text-lg font-bold">
-              {weather?.temp || '22'}°C
-            </div>
-            <div className="text-black text-xs text-center px-1 sm:px-2 mt-1 hidden sm:block">
-              {weather?.description || 'Partly cloudy'}
-            </div>
-          </div>
-        </div>
-        
-        {/* City widget below the weather widget */}
-        <div className="fixed top-52 sm:top-80 right-2 sm:right-4 z-50">
-          <div className="relative w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
-            <div className="text-lg sm:text-2xl mb-2">
-              🏙️
-            </div>
-            <div className="text-black text-xs sm:text-sm font-bold text-center px-1 sm:px-2 leading-tight">
-              {weather?.city || 'Unknown City'}
+            {/* Compact weather */}
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-gray-200">
+              <div className="text-sm">
+                {weather?.icon || '🌤️'}
+              </div>
             </div>
           </div>
         </div>
         
         <main className="flex min-h-screen w-full flex-col items-center bg-background p-2 sm:p-4 md:p-6 lg:p-8">
-          <div className="w-full max-w-4xl">
+          {/* Add top margin on mobile to account for widgets */}
+          <div className="w-full max-w-4xl mt-16 sm:mt-20 md:mt-0">
             <header className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
