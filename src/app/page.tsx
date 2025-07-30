@@ -441,58 +441,171 @@ export default function Home() {
   };
 
   const requestNotificationPermission = async () => {
-    if (!('Notification' in window)) {
+    const mobile = isMobile();
+    const supported = isNotificationSupported();
+
+    if (mobile) {
+      // Mobile devices - show mobile-friendly message
       toast({
-        title: "Unsupported Browser",
-        description: "This browser does not support desktop notifications.",
-        variant: "destructive",
+        title: "Mobile Notifications",
+        description: "On mobile devices, you'll receive in-app notifications, sound alerts, and vibration. Desktop notifications are not supported on mobile browsers.",
+        duration: 6000,
       });
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
-    if (permission === 'granted') {
-      toast({ 
-        title: "Notifications enabled!", 
-        description: "All notification features are now active for your tasks." 
-      });
-      
-      // Enable notifications for all existing tasks
-      setTasks(prevTasks => 
-        prevTasks.map(task => ({
-          ...task,
-          notifications: true
-        }))
-      );
-      
-      // Schedule notifications for all tasks
-      tasks.forEach(scheduleNotification);
-      scheduleDailyReminders();
-      
-      // Send a welcome notification
-      setTimeout(() => {
-        try {
-          new Notification('Welcome to Day Flow!', {
-            body: 'Notifications are now enabled. You\'ll receive reminders for your tasks.',
-            requireInteraction: true,
-            silent: false,
-            tag: 'welcome-notification',
-            icon: getDayFlowIcon(),
+      setNotificationPermission('granted');
+      localStorage.setItem('notificationPermission', 'granted');
+    } else if (supported) {
+      // Desktop devices - request browser notifications
+      try {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+        localStorage.setItem('notificationPermission', permission);
+        
+        if (permission === 'granted') {
+          toast({
+            title: "Notifications Enabled",
+            description: "You'll receive desktop notifications for your tasks and habits.",
+            duration: 3000,
           });
-        } catch (error) {
-          console.error('Error sending welcome notification:', error);
+        } else {
+          toast({
+            title: "Notifications Disabled",
+            description: "You can enable notifications later in your browser settings.",
+            duration: 3000,
+          });
         }
-      }, 500);
-      
+      } catch (error) {
+        console.error('Error requesting notification permission:', error);
+        toast({
+          title: "Notification Error",
+          description: "Unable to request notification permission. You'll still receive in-app notifications.",
+          duration: 3000,
+        });
+      }
     } else {
-      toast({ 
-        title: "Notifications permission denied.", 
-        description: "You can enable notifications later in your browser settings.",
-        variant: 'destructive' 
+      // Unsupported browser - fallback to in-app notifications
+      toast({
+        title: "Notifications Unsupported",
+        description: "Your browser doesn't support notifications. You'll receive in-app alerts instead.",
+        duration: 4000,
       });
+      setNotificationPermission('granted');
+      localStorage.setItem('notificationPermission', 'granted');
     }
   };
 
+  // Check if device is mobile
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  // Check if notifications are supported
+  const isNotificationSupported = () => {
+    return 'Notification' in window && 'serviceWorker' in navigator;
+  };
+
+  // Enhanced notification function that works on mobile and desktop
+  const sendEnhancedNotification = (title: string, message: string) => {
+    const mobile = isMobile();
+    const supported = isNotificationSupported();
+
+    if (mobile) {
+      // Mobile-friendly notifications
+      showMobileNotification(title, message);
+    } else if (supported && Notification.permission === 'granted') {
+      // Desktop notifications
+      new Notification(title, {
+        body: message,
+        icon: getDayFlowIcon(),
+        badge: getDayFlowIcon(),
+        tag: 'dayflow-notification',
+        requireInteraction: true,
+        silent: false
+      });
+    } else {
+      // Fallback for unsupported browsers
+      showMobileNotification(title, message);
+    }
+  };
+
+  // Mobile-friendly notification system
+  const showMobileNotification = (title: string, message: string) => {
+    // Create a prominent in-app notification
+    toast({
+      title: title,
+      description: message,
+      duration: 5000,
+      action: (
+        <Button variant="outline" size="sm" onClick={() => window.focus()}>
+          Open App
+        </Button>
+      ),
+    });
+
+    // Add visual indicator
+    addNotificationBadge();
+    
+    // Try to play sound (if user has allowed)
+    playNotificationSound();
+    
+    // Try to vibrate (if supported)
+    vibrateDevice();
+  };
+
+  // Add visual notification badge
+  const addNotificationBadge = () => {
+    // Add a small notification indicator to the page title
+    const originalTitle = document.title;
+    document.title = `🔔 ${originalTitle}`;
+    
+    // Remove badge after 5 seconds
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 5000);
+  };
+
+  // Play notification sound
+  const playNotificationSound = () => {
+    try {
+      // Create a simple beep sound
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Sound notification not supported');
+    }
+  };
+
+  // Vibrate device (if supported)
+  const vibrateDevice = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  };
+
+  const sendExactTimeNotification = (taskName: string) => {
+    console.log('Sending exact time notification for:', taskName);
+    sendEnhancedNotification(
+      'Task Reminder',
+      `It's time for: ${taskName}`
+    );
+  };
+
+  const sendFifteenMinuteNotification = (taskName: string) => {
+    console.log('Sending 15-minute notification for:', taskName);
+    sendEnhancedNotification(
+      'Task Reminder',
+      `${taskName} starts in 15 minutes`
+    );
+  };
 
 
   const todayDate = new Date();
@@ -572,44 +685,40 @@ export default function Home() {
             )}
           </header>
           
-           {notificationPermission !== 'granted' && (
-              <Card className="mb-6 bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Bell className="h-6 w-6 text-blue-600" />
-                    <div>
-                      <h3 className="font-semibold text-blue-800">Enable All Notifications</h3>
-                      <p className="text-sm text-blue-700">Get comprehensive reminders for your tasks and daily activities.</p>
+          {/* Notification Permission Card */}
+          {notificationPermission === 'default' && (
+            <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
                     </div>
                   </div>
-                  
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-blue-700">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      <span>Task reminders (15 min before & exact time)</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-blue-700">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      <span>Daily morning reminders (6 AM)</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-blue-700">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      <span>Congratulations when all tasks are completed</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-blue-700">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      <span>Welcome notifications with personalized messages</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button onClick={requestNotificationPermission} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                      Enable All Notifications
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-1">
+                      {isMobile() ? 'Mobile Notifications' : 'Enable Notifications'}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {isMobile() 
+                        ? 'Get in-app alerts, sound notifications, and vibration for your tasks and habits. Perfect for mobile devices!'
+                        : 'Get reminders for your tasks and habits with desktop notifications.'
+                      }
+                    </p>
+                    <Button 
+                      onClick={requestNotificationPermission}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {isMobile() ? 'Enable Mobile Alerts' : 'Enable Notifications'}
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
             
 
 
