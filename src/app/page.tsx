@@ -616,47 +616,47 @@ export default function Home() {
   return (
           <>
         {/* Round digital clock in top-right corner of entire page */}
-        <div className="fixed top-4 right-4 z-50">
-          <div className="relative w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-200">
-            <div className="text-black text-xl font-mono font-bold tracking-wider">
+        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
+          <div className="relative w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-200">
+            <div className="text-black text-sm sm:text-xl font-mono font-bold tracking-wider">
               {currentTime}
             </div>
           </div>
         </div>
         
         {/* Weather widget below the clock */}
-        <div className="fixed top-44 right-4 z-50">
-          <div className="relative w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
-            <div className="text-3xl mb-1">
+        <div className="fixed top-28 sm:top-44 right-2 sm:right-4 z-50">
+          <div className="relative w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
+            <div className="text-xl sm:text-3xl mb-1">
               {weather?.icon || '🌤️'}
             </div>
-            <div className="text-black text-lg font-bold">
+            <div className="text-black text-sm sm:text-lg font-bold">
               {weather?.temp || '22'}°C
             </div>
-            <div className="text-black text-xs text-center px-2 mt-1">
+            <div className="text-black text-xs text-center px-1 sm:px-2 mt-1 hidden sm:block">
               {weather?.description || 'Partly cloudy'}
             </div>
           </div>
         </div>
         
         {/* City widget below the weather widget */}
-        <div className="fixed top-80 right-4 z-50">
-          <div className="relative w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
-            <div className="text-2xl mb-2">
+        <div className="fixed top-52 sm:top-80 right-2 sm:right-4 z-50">
+          <div className="relative w-20 h-20 sm:w-32 sm:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
+            <div className="text-lg sm:text-2xl mb-2">
               🏙️
             </div>
-            <div className="text-black text-sm font-bold text-center px-2 leading-tight">
+            <div className="text-black text-xs sm:text-sm font-bold text-center px-1 sm:px-2 leading-tight">
               {weather?.city || 'Unknown City'}
             </div>
           </div>
         </div>
         
-        <main className="flex min-h-screen w-full flex-col items-center bg-background p-4 sm:p-6 md:p-8">
+        <main className="flex min-h-screen w-full flex-col items-center bg-background p-2 sm:p-4 md:p-6 lg:p-8">
           <div className="w-full max-w-4xl">
-            <header className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                <svg width="40" height="40" viewBox="0 0 100 100" className="text-white">
+            <header className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                <svg width="30" height="30" viewBox="0 0 100 100" className="text-white w-8 h-8 sm:w-10 sm:h-10">
                   <rect x="10" y="10" width="80" height="80" rx="8" fill="currentColor" opacity="0.9"/>
                   <rect x="15" y="15" width="70" height="15" fill="white" opacity="0.2" rx="2"/>
                   <circle cx="25" cy="22" r="2" fill="white" opacity="0.8"/>
@@ -668,15 +668,15 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-5xl font-bold text-primary font-headline tracking-tighter">Day Flow</h1>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary font-headline tracking-tighter">Day Flow</h1>
                 {userName && (
-                  <p className="mt-1 text-sm text-muted-foreground">{currentDate}</p>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{currentDate}</p>
                 )}
               </div>
             </div>
              {userName && (
-              <div className="text-right">
-                <p className="text-xl text-foreground/80">
+              <div className="text-left sm:text-right">
+                <p className="text-lg sm:text-xl text-foreground/80">
                   Welcome, {userName}.
                 </p>
               </div>

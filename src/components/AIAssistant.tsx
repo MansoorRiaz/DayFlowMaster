@@ -98,17 +98,17 @@ export function AIAssistant() {
       {/* Floating AI Button */}
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-50"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-50"
         aria-label="Open AI Assistant"
       >
-        <Bot className="h-6 w-6" />
+        <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
       </Button>
 
       {/* AI Chat Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[500px] h-[600px] flex flex-col">
+        <DialogContent className="w-[95vw] max-w-[500px] h-[80vh] sm:h-[600px] flex flex-col mx-2">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Bot className="h-5 w-5 text-blue-600" />
               AI Assistant
             </DialogTitle>
@@ -156,14 +156,15 @@ export function AIAssistant() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about DayFlow, productivity, or SoftwareHub..."
-                className="flex-1"
+                placeholder="Ask me anything..."
+                className="flex-1 text-sm sm:text-base"
                 disabled={isLoading}
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
                 size="icon"
+                className="h-10 w-10 sm:h-10 sm:w-10"
               >
                 <Send className="h-4 w-4" />
               </Button>
