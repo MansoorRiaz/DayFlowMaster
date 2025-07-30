@@ -721,7 +721,7 @@ export default function Home() {
           </div>
           
           {/* Weather widget below the clock */}
-          <div className="fixed top-20 sm:top-28 md:top-44 right-2 sm:right-4 z-50">
+          <div className="fixed top-28 sm:top-44 md:top-80 right-2 sm:right-4 z-50">
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
               <div className="text-lg sm:text-xl md:text-3xl mb-1">
                 {weather?.icon || '🌤️'}
@@ -742,18 +742,6 @@ export default function Home() {
                   🔄 Retry
                 </button>
               )}
-            </div>
-          </div>
-          
-          {/* City widget below the weather widget */}
-          <div className="fixed top-38 sm:top-52 md:top-80 right-2 sm:right-4 z-50">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-32 md:h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-gray-200">
-              <div className="text-sm sm:text-lg md:text-2xl mb-2">
-                🏙️
-              </div>
-              <div className="text-black text-xs sm:text-sm font-bold text-center px-1 sm:px-2 leading-tight">
-                {weather?.city || 'Unknown City'}
-              </div>
             </div>
           </div>
         </div>
