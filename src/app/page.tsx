@@ -884,7 +884,7 @@ export default function Home() {
       </AlertDialog>
 
       {/* AI Assistant */}
-      {/* <AIAssistant /> */}
+      <AIAssistant />
     </>
   );
 }
