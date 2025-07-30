@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Send, X, MessageCircle, Minimize2 } from 'lucide-react';
+import { Bot, Send, X, MessageCircle } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -21,8 +21,7 @@ interface Position {
 
 export function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [position, setPosition] = useState<Position>({ x: 20, y: 100 });
+  const [position, setPosition] = useState<Position>({ x: 20, y: 50 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const chatBoxRef = useRef<HTMLDivElement>(null);
@@ -56,10 +55,15 @@ export function AIAssistant() {
       const newX = e.clientX - dragOffset.x;
       const newY = e.clientY - dragOffset.y;
       
+      // Responsive dimensions
+      const isMobile = window.innerWidth < 640;
+      const chatWidth = isMobile ? 280 : 320;
+      const chatHeight = isMobile ? 400 : 450;
+      
       // Keep within viewport bounds
-      const maxX = window.innerWidth - 320; // chat box width
-      const maxY = window.innerHeight - 450; // chat box height
-      const minY = 50; // minimum Y position to ensure input is visible
+      const maxX = window.innerWidth - chatWidth;
+      const maxY = window.innerHeight - chatHeight;
+      const minY = isMobile ? 10 : 20; // minimum Y position to ensure input is visible
       
       setPosition({
         x: Math.max(0, Math.min(newX, maxX)),
@@ -161,12 +165,17 @@ export function AIAssistant() {
   const handleFloatingButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsOpen(true);
-    setIsMinimized(false);
+    
+    // Responsive positioning
+    const isMobile = window.innerWidth < 640;
+    const chatWidth = isMobile ? 280 : 320;
+    const chatHeight = isMobile ? 400 : 450;
+    const minY = isMobile ? 10 : 20;
+    
     // Position the chat box higher on screen to ensure input is visible
-    const minY = 50; // minimum Y position
     setPosition({
-      x: Math.min(e.clientX - 160, window.innerWidth - 320),
-      y: Math.max(minY, Math.min(e.clientY - 350, window.innerHeight - 450)),
+      x: Math.min(e.clientX - (chatWidth / 2), window.innerWidth - chatWidth),
+      y: Math.max(minY, Math.min(e.clientY - (chatHeight + 50), window.innerHeight - chatHeight)),
     });
   };
 
@@ -189,101 +198,91 @@ export function AIAssistant() {
           style={{
             left: `${position.x}px`,
             top: `${position.y}px`,
-            width: '320px',
-            height: isMinimized ? '50px' : '450px',
+            width: window.innerWidth < 640 ? '280px' : '320px',
+            height: window.innerWidth < 640 ? '400px' : '450px',
             cursor: isDragging ? 'grabbing' : 'default',
           }}
         >
           {/* Header - Draggable */}
           <div
-            className="flex items-center justify-between p-3 bg-blue-600 text-white rounded-t-lg cursor-grab active:cursor-grabbing"
+            className={`flex items-center justify-between p-2 sm:p-3 bg-blue-600 text-white rounded-t-lg cursor-grab active:cursor-grabbing`}
             onMouseDown={handleMouseDown}
           >
-            <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4" />
-              <span className="text-sm font-medium">AI Assistant</span>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm font-medium">AI Assistant</span>
             </div>
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsMinimized(!isMinimized)}
-                className="h-6 w-6 p-0 text-white hover:bg-blue-700"
-              >
-                <Minimize2 className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
                 onClick={() => setIsOpen(false)}
-                className="h-6 w-6 p-0 text-white hover:bg-blue-700"
+                className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-white hover:bg-blue-700"
               >
-                <X className="h-3 w-3" />
+                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </Button>
             </div>
           </div>
 
           {/* Chat Content */}
-          {!isMinimized && (
-            <div className="flex flex-col h-full">
-              {/* Messages */}
-              <ScrollArea className="flex-1 p-3 pb-0">
-                <div className="space-y-2">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] p-2 rounded-lg text-xs ${
-                          message.isUser
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>
-                        <p className="text-xs opacity-70 mt-1">
-                          {message.timestamp.toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-gray-100 text-gray-900 p-2 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-                          <span className="text-xs">AI is thinking...</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-
-              {/* Input - Fixed at bottom */}
-              <div className="p-3 border-t border-gray-200 bg-white">
-                <div className="flex gap-2">
-                  <Input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask me anything..."
-                    className="flex-1 text-xs h-8"
-                    disabled={isLoading}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isLoading}
-                    size="sm"
-                    className="h-8 w-8 p-0"
+          <div className="flex flex-col h-full">
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-2 sm:p-3 pb-0">
+              <div className="space-y-1 sm:space-y-2">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
                   >
-                    <Send className="h-3 w-3" />
-                  </Button>
-                </div>
+                    <div
+                      className={`max-w-[85%] p-1.5 sm:p-2 rounded-lg text-xs ${
+                        message.isUser
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap leading-relaxed text-xs sm:text-sm">{message.text}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 text-gray-900 p-1.5 sm:p-2 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                        <span className="text-xs">AI is thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Input - Fixed at bottom */}
+            <div className="p-2 sm:p-3 border-t border-gray-200 bg-white">
+              <div className="flex gap-1 sm:gap-2">
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask me anything..."
+                  className="flex-1 text-xs h-7 sm:h-8"
+                  disabled={isLoading}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isLoading}
+                  size="sm"
+                  className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                >
+                  <Send className="h-3 w-3" />
+                </Button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </>
