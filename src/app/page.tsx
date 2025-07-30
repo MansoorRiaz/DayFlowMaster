@@ -206,6 +206,104 @@ export default function Home() {
     }
   }, [tasks, habits, customHabits, isLoading]);
 
+  // Check if device is mobile
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  // Check if notifications are supported
+  const isNotificationSupported = () => {
+    return 'Notification' in window && 'serviceWorker' in navigator;
+  };
+
+  // Enhanced notification function that works on mobile and desktop
+  const sendEnhancedNotification = (title: string, message: string) => {
+    const mobile = isMobile();
+    const supported = isNotificationSupported();
+
+    if (mobile) {
+      // Mobile-friendly notifications
+      showMobileNotification(title, message);
+    } else if (supported && Notification.permission === 'granted') {
+      // Desktop notifications
+      new Notification(title, {
+        body: message,
+        icon: getDayFlowIcon(),
+        badge: getDayFlowIcon(),
+        tag: 'dayflow-notification',
+        requireInteraction: true,
+        silent: false
+      });
+    } else {
+      // Fallback for unsupported browsers
+      showMobileNotification(title, message);
+    }
+  };
+
+  // Mobile-friendly notification system
+  const showMobileNotification = (title: string, message: string) => {
+    // Create a prominent in-app notification
+    toast({
+      title: title,
+      description: message,
+      duration: 5000,
+      action: (
+        <Button variant="outline" size="sm" onClick={() => window.focus()}>
+          Open App
+        </Button>
+      ),
+    });
+
+    // Add visual indicator
+    addNotificationBadge();
+    
+    // Try to play sound (if user has allowed)
+    playNotificationSound();
+    
+    // Try to vibrate (if supported)
+    vibrateDevice();
+  };
+
+  // Add visual notification badge
+  const addNotificationBadge = () => {
+    // Add a small notification indicator to the page title
+    const originalTitle = document.title;
+    document.title = `🔔 ${originalTitle}`;
+    
+    // Remove badge after 5 seconds
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 5000);
+  };
+
+  // Play notification sound
+  const playNotificationSound = () => {
+    try {
+      // Create a simple beep sound
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Sound notification not supported');
+    }
+  };
+
+  // Vibrate device (if supported)
+  const vibrateDevice = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  };
+
   const scheduleNotification = useCallback((task: Task) => {
     console.log('Scheduling notification for task:', task.title, 'Permission:', notificationPermission, 'Notifications enabled:', task.notifications, 'Task done:', task.isDone);
     
@@ -232,30 +330,7 @@ export default function Home() {
     if (taskDateTime > now) {
       const exactTimeout = setTimeout(() => {
         console.log('Sending exact time notification for:', task.title);
-        try {
-          const notification = new Notification('Day Flow: Task Starting!', {
-            body: `Your task "${task.title}" is starting now.`,
-            requireInteraction: true,
-            silent: false,
-            tag: `task-exact-${task.id}`,
-            icon: getDayFlowIcon(),
-          });
-          
-          notification.onclick = () => {
-            console.log('Task notification clicked:', task.title);
-            window.focus();
-          };
-          
-          notification.onshow = () => {
-            console.log('Task notification shown successfully:', task.title);
-          };
-          
-          notification.onerror = (error) => {
-            console.error('Task notification error:', error);
-          };
-        } catch (error) {
-          console.error('Error creating task notification:', error);
-        }
+        sendEnhancedNotification('Task Starting!', `Your task "${task.title}" is starting now.`);
       }, taskDateTime.getTime() - now.getTime());
       timeouts.current.set(`exact-${task.id}`, exactTimeout);
       console.log('Scheduled exact notification for:', task.title, 'in', taskDateTime.getTime() - now.getTime(), 'ms');
@@ -265,35 +340,15 @@ export default function Home() {
     if (fifteenMinutesBefore > now) {
       const fifteenMinTimeout = setTimeout(() => {
         console.log('Sending 15min notification for:', task.title);
-        try {
-          const notification = new Notification('Day Flow: Upcoming Task', {
-            body: `"${task.title}" starts in 15 minutes.`,
-            requireInteraction: true,
-            silent: false,
-            tag: `task-15min-${task.id}`,
-            icon: getDayFlowIcon(),
-          });
-          
-          notification.onclick = () => {
-            console.log('15min notification clicked:', task.title);
-            window.focus();
-          };
-          
-          notification.onshow = () => {
-            console.log('15min notification shown successfully:', task.title);
-          };
-          
-          notification.onerror = (error) => {
-            console.error('15min notification error:', error);
-          };
-        } catch (error) {
-          console.error('Error creating 15min notification:', error);
-        }
+        sendEnhancedNotification(
+          'Upcoming Task',
+          `"${task.title}" starts in 15 minutes.`
+        );
       }, fifteenMinutesBefore.getTime() - now.getTime());
       timeouts.current.set(`15min-${task.id}`, fifteenMinTimeout);
       console.log('Scheduled 15min notification for:', task.title, 'in', fifteenMinutesBefore.getTime() - now.getTime(), 'ms');
     }
-  }, [notificationPermission]);
+  }, [notificationPermission, sendEnhancedNotification]);
 
   useEffect(() => {
     tasks.forEach(task => scheduleNotification(task));
@@ -490,104 +545,6 @@ export default function Home() {
       });
       setNotificationPermission('granted');
       localStorage.setItem('notificationPermission', 'granted');
-    }
-  };
-
-  // Check if device is mobile
-  const isMobile = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
-
-  // Check if notifications are supported
-  const isNotificationSupported = () => {
-    return 'Notification' in window && 'serviceWorker' in navigator;
-  };
-
-  // Enhanced notification function that works on mobile and desktop
-  const sendEnhancedNotification = (title: string, message: string) => {
-    const mobile = isMobile();
-    const supported = isNotificationSupported();
-
-    if (mobile) {
-      // Mobile-friendly notifications
-      showMobileNotification(title, message);
-    } else if (supported && Notification.permission === 'granted') {
-      // Desktop notifications
-      new Notification(title, {
-        body: message,
-        icon: getDayFlowIcon(),
-        badge: getDayFlowIcon(),
-        tag: 'dayflow-notification',
-        requireInteraction: true,
-        silent: false
-      });
-    } else {
-      // Fallback for unsupported browsers
-      showMobileNotification(title, message);
-    }
-  };
-
-  // Mobile-friendly notification system
-  const showMobileNotification = (title: string, message: string) => {
-    // Create a prominent in-app notification
-    toast({
-      title: title,
-      description: message,
-      duration: 5000,
-      action: (
-        <Button variant="outline" size="sm" onClick={() => window.focus()}>
-          Open App
-        </Button>
-      ),
-    });
-
-    // Add visual indicator
-    addNotificationBadge();
-    
-    // Try to play sound (if user has allowed)
-    playNotificationSound();
-    
-    // Try to vibrate (if supported)
-    vibrateDevice();
-  };
-
-  // Add visual notification badge
-  const addNotificationBadge = () => {
-    // Add a small notification indicator to the page title
-    const originalTitle = document.title;
-    document.title = `🔔 ${originalTitle}`;
-    
-    // Remove badge after 5 seconds
-    setTimeout(() => {
-      document.title = originalTitle;
-    }, 5000);
-  };
-
-  // Play notification sound
-  const playNotificationSound = () => {
-    try {
-      // Create a simple beep sound
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.2);
-    } catch (error) {
-      console.log('Sound notification not supported');
-    }
-  };
-
-  // Vibrate device (if supported)
-  const vibrateDevice = () => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate([200, 100, 200]);
     }
   };
 
