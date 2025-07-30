@@ -14,14 +14,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://dayflow.app'),
+  metadataBase: new URL('https://day-flow-master-9d0qn6otx-software-hubs-projects.vercel.app'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Day Flow - Smart Task Management & Habit Tracking',
     description: 'Organize your day with intelligent task management, habit tracking, and productivity tools. Boost your productivity with Day Flow.',
-    url: 'https://dayflow.app',
+    url: 'https://day-flow-master-9d0qn6otx-software-hubs-projects.vercel.app',
     siteName: 'Day Flow',
     images: [
       {
