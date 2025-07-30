@@ -105,13 +105,71 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching weather:', error);
-      // Set default weather if API fails
       setWeather({
         temp: 22,
         icon: '🌤️',
-        description: 'Partly cloudy',
-        city: 'Unknown City'
+        description: 'Weather unavailable',
+        city: 'Weather Error'
       });
+    }
+  };
+
+  // Retry location access
+  const retryLocationAccess = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchWeather(position.coords.latitude, position.coords.longitude);
+          toast({
+            title: "Location Access",
+            description: "Location access granted! Weather data updated.",
+            duration: 3000,
+          });
+        },
+        (error) => {
+          console.error('Error getting location on retry:', error);
+          
+          let errorMessage = 'Location access denied';
+          let cityName = 'Location Denied';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
+              cityName = 'Location Denied';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information unavailable.';
+              cityName = 'Location Unavailable';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              cityName = 'Location Timeout';
+              break;
+            default:
+              errorMessage = 'Unable to get location.';
+              cityName = 'Location Error';
+              break;
+          }
+          
+          toast({
+            title: "Location Access",
+            description: errorMessage,
+            duration: 4000,
+          });
+          
+          setWeather({
+            temp: 22,
+            icon: '🌤️',
+            description: 'Location unavailable',
+            city: cityName
+          });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
     }
   };
 
@@ -247,13 +305,49 @@ export default function Home() {
         },
         (error) => {
           console.error('Error getting location:', error);
+          
+          // Handle different types of geolocation errors
+          let errorMessage = 'Location access denied';
+          let cityName = 'Unknown City';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location permission denied. Weather data will be limited.';
+              cityName = 'Location Denied';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information unavailable.';
+              cityName = 'Location Unavailable';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              cityName = 'Location Timeout';
+              break;
+            default:
+              errorMessage = 'Unable to get location.';
+              cityName = 'Location Error';
+              break;
+          }
+          
+          // Show user-friendly toast message
+          toast({
+            title: "Location Access",
+            description: errorMessage,
+            duration: 4000,
+          });
+          
           // Set default weather if location access is denied
           setWeather({
             temp: 22,
             icon: '🌤️',
-            description: 'Partly cloudy',
-            city: 'Unknown City'
+            description: 'Location unavailable',
+            city: cityName
           });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
         }
       );
     } else {
@@ -261,8 +355,8 @@ export default function Home() {
       setWeather({
         temp: 22,
         icon: '🌤️',
-        description: 'Partly cloudy',
-        city: 'Unknown City'
+        description: 'Geolocation not supported',
+        city: 'Location Unsupported'
       });
     }
     
@@ -638,6 +732,16 @@ export default function Home() {
               <div className="text-black text-xs text-center px-1 sm:px-2 mt-1 hidden md:block">
                 {weather?.description || 'Partly cloudy'}
               </div>
+              {/* Show retry button if location is denied */}
+              {weather?.city && weather.city.includes('Location') && (
+                <button
+                  onClick={retryLocationAccess}
+                  className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg transition-colors"
+                  title="Retry location access"
+                >
+                  🔄 Retry
+                </button>
+              )}
             </div>
           </div>
           
